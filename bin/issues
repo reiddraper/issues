@@ -9,7 +9,7 @@ import issues
 
 def print_issues(i):
     for issue in i:
-        print "* %s" % issue.title
+        print "* #%d\t%s" % (issue.number, issue.title)
 
 def print_milestones(m, num_uncategorized_issues):
     listed = [[x.title, x.due_on, x.description, x.open_issues] for x in m]
@@ -20,7 +20,10 @@ def list_issues(token, repo_list, milestone_name):
     g = Github(token)
     for r in repo_list:
         repo = g.get_repo(r)
-        m = issues.milestone_by_name(repo, milestone_name)
+        if milestone_name == 'none':
+            m = 'none'
+        else:
+            m = issues.milestone_by_name(repo, milestone_name)
         print '===> Processing issues for repo %s' % r
         print_issues(issues.open_issues_in_milestone(repo, m))
         print '\n'
