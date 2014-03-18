@@ -19,7 +19,7 @@ def print_milestones(m, num_uncategorized_issues):
 def list_issues(token, repo_list, milestone_name):
     g = Github(token)
     for r in repo_list:
-        repo = g.get_repo('basho/%s' % r)
+        repo = g.get_repo(r)
         m = issues.milestone_by_name(repo, milestone_name)
         print '===> Processing issues for repo %s' % r
         print_issues(issues.open_issues_in_milestone(repo, m))
@@ -28,7 +28,7 @@ def list_issues(token, repo_list, milestone_name):
 def list_milestones(token, repo_list):
     g = Github(token)
     for r in repo_list:
-        repo = g.get_repo('basho/%s' % r)
+        repo = g.get_repo(r)
         milestones = repo.get_milestones()
         print '===> Processing milestones for repo %s' % r
         num_uncategorized_issues = len(list(repo.get_issues(milestone='none')))
@@ -39,7 +39,7 @@ def create_milestone(token, milestone_title, description, due_date, repo_list):
     parsed_date = parse(due_date)
     g = Github(token)
     for r in repo_list:
-        repo = g.get_repo('basho/%s' % r)
+        repo = g.get_repo(r)
         try:
             repo.create_milestone(milestone_title, description=description, due_on=parsed_date)
         except GithubException as e:
@@ -52,7 +52,7 @@ def create_milestone(token, milestone_title, description, due_date, repo_list):
 def rename_milestone(token, old_name, new_name, repo_list):
     g = Github(token)
     for r in repo_list:
-        repo = g.get_repo('basho/%s' % r)
+        repo = g.get_repo(r)
         m = issues.milestone_by_name(repo, old_name)
         m.edit(new_name)
 
