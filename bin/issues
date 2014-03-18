@@ -1,23 +1,68 @@
 #!/usr/bin/env python
 
+
 from github import Github
+from tabulate import tabulate
 import issues
 
 def print_issues(i):
     for issue in i:
         print "* %s" % issue.title
 
-def main(token, repo_list, milestone_name):
+def print_milestones(m, num_uncategorized_issues):
+    listed = [[x.title, x.due_on, x.description, x.open_issues] for x in m]
+    listed.append(["Uncategorized", "Never", "", num_uncategorized_issues])
+    print tabulate(listed, headers=["Title", "Due on", "Description", "# Open"], tablefmt="pipe")
+    #for milestone in m:
+    #    print "* %s\t\t%s\t%s %d" % (milestone.title.ljust(30), str(milestone.due_on).ljust(10), str(milestone.description).ljust(40), milestone.open_issues)
+    #print "* %s\t\t%s\t%s %d" % ("Uncategorized".ljust(30), 'Never'.ljust(10), "".ljust(40), num_uncategorized_issues)
+
+def list_issues(token, repo_list, milestone_name):
     g = Github(token)
     for r in repo_list:
         repo = g.get_repo('basho/%s' % r)
         m = issues.milestone_by_name(repo, milestone_name)
-        print '===> Processing repo %s' % r
+        print '===> Processing issues for repo %s' % r
         print_issues(issues.open_issues_in_milestone(repo, m))
+        print '\n'
+
+def list_milestones(token, repo_list):
+    g = Github(token)
+    for r in repo_list:
+        repo = g.get_repo('basho/%s' % r)
+        milestones = repo.get_milestones()
+        print '===> Processing milestones for repo %s' % r
+        num_uncategorized_issues = len(list(repo.get_issues(milestone='none')))
+        print_milestones(milestones, num_uncategorized_issues)
         print '\n'
 
 if __name__ == '__main__':
     import sys
-    token = sys.argv[1]
-    repo_list = sys.argv[2:]
-    main(token, repo_list, '2.0')
+    import argparse
+    parser = argparse.ArgumentParser(usage='%(prog)s <command> [options] [repos]', description="commands: list create delete")
+    parser.add_argument("-t", "--token", help="GitHub access token", required=True)
+    command = sys.argv[1]
+    if command == "list-issues":
+        parser.add_argument("-m", "--milestone", help="milestone name", required=True)
+        (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
+        if len(repo_list) == 0:
+            parser.print_usage()
+        else:
+            list_issues(args.token, repo_list, args.milestone)
+    elif command == "list":
+        (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
+        if len(repo_list) == 0:
+            parser.print_usage()
+        else:
+            list_milestones(args.token, repo_list)
+    elif command == "create":
+        parser.add_argument("-m", "--milestone", help="milestone name", required=True)
+        parser.add_argument("-D", "--date", help="milestone due date", required=True)
+        parser.add_argument("-d", "--description", help="milestone description", required=True)
+        (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
+        if len(repo_list) == 0:
+            parser.print_usage()
+        else:
+            print "NYI create %s %s %s" % (args.milestone, args.description, args.date)
+    else:
+        print "invalid command %s" % command
