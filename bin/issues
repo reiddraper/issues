@@ -24,6 +24,8 @@ def list_issues(token, repo_list, milestone_name):
             m = 'none'
         else:
             m = issues.milestone_by_name(repo, milestone_name)
+            if not m:
+                raise Exception("No milestone with name %s" % milestone_name)
         print '===> Processing issues for repo %s' % r
         print_issues(issues.open_issues_in_milestone(repo, m))
         print '\n'
