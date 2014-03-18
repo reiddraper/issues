@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import json
 from github import Github
 from github.GithubException import GithubException
 from tabulate import tabulate
@@ -75,6 +76,19 @@ def rename_milestone(token, old_name, new_name, repo_list):
         m = issues.milestone_by_name(repo, old_name)
         m.edit(new_name)
 
+def json_milestones(token, output, repo_list):
+    json_map = {}
+    g = Github(token)
+    for r in repo_list:
+        repo = g.get_repo(r)
+        milestones = repo.get_milestones()
+        for stone in milestones:
+            issue_list = issues.open_issues_in_milestone(repo, stone)
+            issues_json = json_map.get(stone.title, {})
+            issues_json[r] = {"open": stone.open_issues, "closed": stone.closed_issues, "number": stone.number, "issues": [{"number": i.number, "title": i.title, "url": i.html_url} for i in issue_list] }
+            json_map[stone.title] = issues_json
+    json.dump(json_map, open(output, 'w'))
+
 if __name__ == '__main__':
     import sys
     import argparse
@@ -125,5 +139,12 @@ if __name__ == '__main__':
             parser.print_usage()
         else:
             rename_milestone(args.token, args.milestone, args.new_name, repo_list)
+    elif command == "json":
+        parser.add_argument("-o", "--output", help="output filename", required=True)
+        (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
+        if len(repo_list) == 0:
+            parser.print_usage()
+        else:
+            json_milestones(args.token, args.output, repo_list)
     else:
         print "invalid command %s" % command
