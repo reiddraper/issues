@@ -2,7 +2,9 @@
 
 
 from github import Github
+from github.GithubException import GithubException
 from tabulate import tabulate
+from dateutil.parser import parse
 import issues
 
 def print_issues(i):
@@ -11,11 +13,8 @@ def print_issues(i):
 
 def print_milestones(m, num_uncategorized_issues):
     listed = [[x.title, x.due_on, x.description, x.open_issues] for x in m]
-    listed.append(["Uncategorized", "Never", "", num_uncategorized_issues])
-    print tabulate(listed, headers=["Title", "Due on", "Description", "# Open"], tablefmt="pipe")
-    #for milestone in m:
-    #    print "* %s\t\t%s\t%s %d" % (milestone.title.ljust(30), str(milestone.due_on).ljust(10), str(milestone.description).ljust(40), milestone.open_issues)
-    #print "* %s\t\t%s\t%s %d" % ("Uncategorized".ljust(30), 'Never'.ljust(10), "".ljust(40), num_uncategorized_issues)
+    listed.append([u"Uncategorized", u"Never", u"", num_uncategorized_issues])
+    print tabulate(listed, headers=[u"Title", u"Due on", u"Description", u"# Open"], tablefmt="pipe")
 
 def list_issues(token, repo_list, milestone_name):
     g = Github(token)
@@ -35,6 +34,20 @@ def list_milestones(token, repo_list):
         num_uncategorized_issues = len(list(repo.get_issues(milestone='none')))
         print_milestones(milestones, num_uncategorized_issues)
         print '\n'
+
+def create_milestone(token, milestone_title, description, due_date, repo_list):
+    parsed_date = parse(due_date)
+    g = Github(token)
+    for r in repo_list:
+        repo = g.get_repo('basho/%s' % r)
+        try:
+            repo.create_milestone(milestone_title, description=description, due_on=parsed_date)
+        except GithubException as e:
+            if e.status == 422:
+                m = issues.milestone_by_name(repo, milestone_title)
+                m.edit(milestone_title, description=description, due_on=parsed_date)
+            else:
+                raise e
 
 if __name__ == '__main__':
     import sys
@@ -63,6 +76,6 @@ if __name__ == '__main__':
         if len(repo_list) == 0:
             parser.print_usage()
         else:
-            print "NYI create %s %s %s" % (args.milestone, args.description, args.date)
+            create_milestone(args.token, args.milestone, args.description, args.date, repo_list)
     else:
         print "invalid command %s" % command
