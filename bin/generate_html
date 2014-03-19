@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+from dominate import *
+from dominate.tags import *
+import urllib
+import os
+import errno
+
+def mkdir_p_idempotent(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(dir_name):
+            pass
+        else:
+            raise
+
+def generate_milestone_page(title, data, output_dir):
+    _html2 = document(title=title)
+    with _html2:
+        h1(title)
+        for k in data.keys():
+            h2(a(k, href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"])))
+            progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
+            for i in data[k]["issues"]:
+                li(a("#%d - %s" % (i["number"], i["title"]), href=i["url"]))
+
+    f = open(os.path.join(output_dir, title, "index.html"), "w")
+    f.write(str(_html2))
+    f.close()
+
+
+def generate_sample_html(json_db, output_dir):
+    _html = document(title="hello world")
+    with _html.head:
+        link(rel='stylesheet', href='style.css')
+    for k in json_db.keys():
+        mkdir_p_idempotent(os.path.join(output_dir, k))
+        with _html:
+            h1(a(k, href="%s" % urllib.quote(k)))
+            openissues = sum([json_db[k][x]["open"] for x in json_db[k].keys()])
+            closedissues = sum([json_db[k][x]["closed"] for x in json_db[k].keys()])
+            progress(max=openissues+closedissues, value=closedissues)
+        generate_milestone_page(k, json_db[k], output_dir)
+
+    f = open(os.path.join(output_dir, "index.html"), "w")
+    f.write(str(_html))
+    f.close()
+
+if __name__ == '__main__':
+    import sys
+    import json
+    (json_input, output_dir) = sys.argv[1:3]
+    json_db = json.load(open(json_input, 'r'))
+    generate_sample_html(json_db, output_dir)

@@ -20,6 +20,6 @@ setup(
     license=license,
     package_dir={'issues': 'issues'},
     packages=find_packages('.', exclude=('tests', 'docs')),
-    scripts=['bin/issues']
+    scripts=['bin/issues', 'bin/generate_html']
 )
 
