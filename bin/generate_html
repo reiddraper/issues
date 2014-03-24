@@ -31,7 +31,7 @@ def generate_milestone_page(title, data, output_dir):
 
 
 def generate_sample_html(json_db, output_dir):
-    _html = document(title="hello world")
+    _html = document(title="Riak Milestones")
     with _html.head:
         link(rel='stylesheet', href='style.css')
     for k in json_db.keys():
