@@ -5,6 +5,8 @@ from dominate.tags import *
 import urllib
 import os
 import errno
+import datetime
+import codecs
 
 def mkdir_p_idempotent(dir_name):
     try:
@@ -20,14 +22,18 @@ def generate_milestone_page(title, data, output_dir):
     with _html2:
         h1(title)
         for k in data.keys():
-            h2(a(k, href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"])))
+            with h2() as h:
+                a(k, href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"]))
+            h += " %d/%d" % (data[k]["closed"], data[k]["open"]+data[k]["closed"])
             progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
             for i in data[k]["issues"]:
                 li(a("#%d - %s" % (i["number"], i["title"]), href=i["url"]))
 
-    f = open(os.path.join(output_dir, title, "index.html"), "w")
-    f.write(str(_html2))
-    f.close()
+    with _html2:
+        p("Last generated at %s" % (datetime.datetime.now()))
+
+    with codecs.open(os.path.join(output_dir, title, "index.html"), "w", encoding="utf-8") as f:
+        f.write(_html2.render())
 
 
 def generate_sample_html(json_db, output_dir):
@@ -37,15 +43,19 @@ def generate_sample_html(json_db, output_dir):
     for k in json_db.keys():
         mkdir_p_idempotent(os.path.join(output_dir, k))
         with _html:
-            h1(a(k, href="%s" % urllib.quote(k)))
+            with h1() as h:
+                a(k, href="%s" % urllib.quote(k))
             openissues = sum([json_db[k][x]["open"] for x in json_db[k].keys()])
             closedissues = sum([json_db[k][x]["closed"] for x in json_db[k].keys()])
+            h += " %d/%d" % (closedissues, openissues+closedissues)
             progress(max=openissues+closedissues, value=closedissues)
         generate_milestone_page(k, json_db[k], output_dir)
 
-    f = open(os.path.join(output_dir, "index.html"), "w")
-    f.write(str(_html))
-    f.close()
+    with _html:
+        p("Last generated at %s" % (datetime.datetime.now()))
+
+    with codecs.open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
+        f.write(_html.render())
 
 if __name__ == '__main__':
     import sys
