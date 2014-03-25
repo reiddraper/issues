@@ -21,7 +21,7 @@ def generate_milestone_page(title, data, output_dir):
     _html2 = document(title=title)
     with _html2:
         h1(title)
-        for k in data.keys():
+        for k in sorted(data.keys()):
             with h2() as h:
                 a(k, href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"]))
             h += " %d/%d" % (data[k]["closed"], data[k]["open"]+data[k]["closed"])
@@ -40,7 +40,7 @@ def generate_sample_html(json_db, output_dir):
     _html = document(title="Riak Milestones")
     with _html.head:
         link(rel='stylesheet', href='style.css')
-    for k in json_db.keys():
+    for k in sorted(json_db.keys()):
         mkdir_p_idempotent(os.path.join(output_dir, k))
         with _html:
             with h1() as h:
