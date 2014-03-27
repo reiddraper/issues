@@ -53,7 +53,8 @@ def list_issues_by_label(token, repo_list, label_names):
     for r in repo_list:
         repo = g.get_repo(r)
         labels = [repo.get_label(l) for l in label_names.split(",")]
-        found = issues.open_issues_by_label(repo, labels)
+        found = issues.open_issues_by_labels(repo, labels)
+        print '===> Processing issues for repo %s' % r
         print_issues(found)
         print '\n'
 
@@ -73,8 +74,10 @@ def list_label_groups(token, repo_list, label_groups_str):
     for r in repo_list:
         repo = g.get_repo(r)
         label_groups = [[repo.get_label(l) for l in label_group] for label_group in label_group_strs]
-        issue_counts = [(lg, len([i for i in issues.open_issues_by_label(repo, lg)])) for lg in label_groups]
+        issue_counts = [(lg, len([i for i in issues.open_issues_by_labels(repo, lg)])) for lg in label_groups]
+        print '===> Processing issues for repo %s' % r
         print_label_groups(issue_counts)
+        print '\n'
 
 
 def create_milestone(token, milestone_title, description, due_date, repo_list):
