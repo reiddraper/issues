@@ -22,12 +22,23 @@ def generate_milestone_page(title, data, output_dir):
     with _html2:
         h1(title)
         for k in sorted(data.keys()):
+            if data[k]["open"]+data[k]["closed"] == 0:
+                continue
             with h2() as h:
                 a(k, href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"]))
             h += " %d/%d" % (data[k]["closed"], data[k]["open"]+data[k]["closed"])
-            progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
+            with h:
+                progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
             for i in data[k]["issues"]:
-                li(a("#%d - %s" % (i["number"], i["title"]), href=i["url"]))
+                with li("%s - " % i["type"]) as l:
+                    a("#%d - %s" % (i["number"], i["title"]), href=i["url"])
+                l += "  --  "
+                with l:
+                    if i["assignee"]:
+                        a(i["assignee"], href="../users/%s.html" % i["assignee"])
+                    else:
+                        a("unassigned", style="color: red;")
+
 
     with _html2:
         p("Last generated at %s" % (datetime.datetime.now()))
@@ -36,7 +47,7 @@ def generate_milestone_page(title, data, output_dir):
         f.write(_html2.render())
 
 
-def generate_sample_html(json_db, output_dir):
+def generate_milestone_html(json_db, output_dir):
     _html = document(title="Riak Milestones")
     with _html.head:
         link(rel='stylesheet', href='style.css')
@@ -57,9 +68,58 @@ def generate_sample_html(json_db, output_dir):
     with codecs.open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(_html.render())
 
+def generate_user_page(username, userdata, output_dir):
+    _html = document(title="User assigned issues")
+    for m in sorted(userdata.keys()):
+        with _html:
+            h1(m)
+            for r in sorted(userdata[m].keys()):
+                h2(r)
+                for i in userdata[m][r]:
+                    li(a("#%d - %s" % (i["number"], i["title"]), href=i["url"]))
+
+    with _html:
+        p("Last generated at %s" % (datetime.datetime.now()))
+
+    with codecs.open(os.path.join(output_dir, "users", "%s.html" % username), "w", encoding="utf-8") as f:
+        f.write(_html.render())
+
+def generate_user_html(json_db, output_dir):
+    mkdir_p_idempotent(os.path.join(output_dir, "users"))
+    users = {}
+    usertotals = {}
+    for m in json_db.keys():
+        for r in json_db[m].keys():
+            for issue in json_db[m][r]["issues"]:
+                if issue["assignee"]:
+                    u = issue["assignee"]
+                    userdata = users.get(u, {})
+                    userdatamile = userdata.get(m, {})
+                    userdatamilerepo = userdatamile.get(r, [])
+                    userdatamilerepo.append(issue)
+                    userdatamile[r] = userdatamilerepo
+                    userdata[m] = userdatamile
+                    users[u] = userdata
+                    if usertotals.get(u):
+                        usertotals[u] += 1
+                    else:
+                        usertotals[u] = 1
+    _html = document(title="User assigned issues")
+    for user in users.keys():
+        with _html:
+            li(a(user, href="%s.html" % user), " - %d" % usertotals[user])
+        generate_user_page(user, users[user], output_dir)
+
+    with _html:
+        p("Last generated at %s" % (datetime.datetime.now()))
+
+    with codecs.open(os.path.join(output_dir, "users", "index.html"), "w", encoding="utf-8") as f:
+        f.write(_html.render())
+
 if __name__ == '__main__':
     import sys
     import json
     (json_input, output_dir) = sys.argv[1:3]
     json_db = json.load(open(json_input, 'r'))
-    generate_sample_html(json_db, output_dir)
+    generate_milestone_html(json_db, output_dir)
+    generate_user_html(json_db, output_dir)

@@ -13,6 +13,18 @@ def print_issues(i):
     for issue in i:
         print "* #%d\t%s" % (issue.number, issue.title)
 
+def get_assignee(issue):
+    if issue.assignee:
+        return issue.assignee.login
+    else:
+        return None
+
+def get_type(issue):
+    if issue.pull_request.html_url:
+        return "P"
+    else:
+        return "I"
+
 def print_milestones(m, num_uncategorized_issues):
     listed = [[x.title, x.due_on, x.description, x.open_issues] for x in m]
     listed.append([u"Uncategorized", u"Never", u"", num_uncategorized_issues])
@@ -92,11 +104,11 @@ def json_milestones(token, output, repo_list):
         for stone in milestones:
             issue_list = issues.open_issues_in_milestone(repo, stone)
             issues_json = json_map.get(stone.title, {})
-            issues_json[r] = {"open": stone.open_issues, "closed": stone.closed_issues, "number": stone.number, "issues": [{"number": i.number, "title": i.title, "url": i.html_url} for i in issue_list] }
+            issues_json[r] = {"open": stone.open_issues, "closed": stone.closed_issues, "number": stone.number, "issues": [{"number": i.number, "title": i.title, "url": i.html_url, "assignee": get_assignee(i), "type": get_type(i)} for i in issue_list] }
             json_map[stone.title] = issues_json
         issues_json = json_map.get("uncategorized", {})
         issue_list = list(repo.get_issues(milestone='none'))
-        issues_json[r] = {"open": len(issue_list), "closed": 0, "number": 0, "issues": [{"number": i.number, "title": i.title, "url": i.html_url} for i in issue_list] }
+        issues_json[r] = {"open": len(issue_list), "closed": 0, "number": 0, "issues": [{"number": i.number, "title": i.title, "url": i.html_url, "assignee": get_assignee(i), "type": get_type(i)} for i in issue_list] }
         json_map["uncategorized"] = issues_json
     json.dump(json_map, open(output, 'w'))
 
