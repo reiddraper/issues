@@ -69,7 +69,7 @@ def list_milestones(token, repo_list):
 
 def list_label_groups(token, repo_list, label_groups_str):
     g = Github(token)
-    label_group_strs = [lgs.split(",") for lgs in label_groups_str.split(";")]
+    label_group_strs = parse_label_groups(label_groups_str)
     for r in repo_list:
         repo = g.get_repo(r)
         label_groups = [[repo.get_label(l) for l in label_group] for label_group in label_group_strs]
@@ -118,7 +118,7 @@ def rename_milestone(token, old_name, new_name, repo_list):
         m = issues.milestone_by_name(repo, old_name)
         m.edit(new_name)
 
-def json_milestones(token, output, repo_list):
+def json_milestones(token, repo_list):
     json_map = {}
     g = Github(token)
     for r in repo_list:
@@ -133,7 +133,34 @@ def json_milestones(token, output, repo_list):
         issue_list = list(repo.get_issues(milestone='none'))
         issues_json[r] = {"open": len(issue_list), "closed": 0, "number": 0, "issues": [{"number": i.number, "title": i.title, "url": i.html_url, "assignee": get_assignee(i), "type": get_type(i)} for i in issue_list] }
         json_map["uncategorized"] = issues_json
-    json.dump(json_map, open(output, 'w'))
+    return json_map
+
+def json_label_groups(token, repo_list, label_groups_str):
+    label_map = {}
+    g = Github(token)
+    label_group_strs = parse_label_groups(label_groups_str)
+    for lg in label_group_strs:
+        lg_key = "+".join(lg)
+        repos_map = label_map.get(lg_key, {})
+        for r in repo_list:
+            repo_map = repos_map.get(r, {})
+            repo = g.get_repo(r)
+            labels = [repo.get_label(l) for l in lg]
+            open_issues = [{"number": i.number, "title": i.title, "url": i.html_url}
+                           for i in issues.open_issues_by_labels(repo, labels)]
+            open_issues_count = len(open_issues)
+            closed_issues_count = len([i for i in issues.closed_issues_by_labels(repo, labels)])
+            repo_map["closed"] = closed_issues_count
+            repo_map["open"] = open_issues_count
+            repo_map["number"] = closed_issues_count + open_issues_count
+            repo_map["issues"] = open_issues
+            repos_map[r] = repo_map
+        label_map[lg_key] = repos_map
+    return label_map
+
+
+def parse_label_groups(label_groups_str):
+    return [lgs.split(",") for lgs in label_groups_str.split(";")]
 
 if __name__ == '__main__':
     import sys
@@ -200,10 +227,19 @@ if __name__ == '__main__':
             rename_milestone(args.token, args.milestone, args.new_name, repo_list)
     elif command == "json":
         parser.add_argument("-o", "--output", help="output filename", required=True)
+        parser.add_argument("-l", "--labels", help="label grousp", required=False)
         (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
         if len(repo_list) == 0:
             parser.print_usage()
         else:
-            json_milestones(args.token, args.output, repo_list)
+            labels_map = {}
+            if args.labels:
+                labels_map = json_label_groups(args.token, repo_list, args.labels)
+
+            json_map = {}
+            milestones_map = json_milestones(args.token, repo_list)
+            json_map["milestones"] = milestones_map
+            json_map["labels"] = labels_map
+            json.dump(json_map, open(args.output, 'w'))
     else:
         print "invalid command %s" % command
