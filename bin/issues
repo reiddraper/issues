@@ -30,7 +30,7 @@ def print_milestones(m, num_uncategorized_issues):
     listed.append([u"Uncategorized", u"Never", u"", num_uncategorized_issues])
     print tabulate(listed, headers=[u"Title", u"Due on", u"Description", u"# Open"], tablefmt="pipe")
 
-def list_issues(token, repo_list, milestone_name):
+def list_issues_by_milestone(token, repo_list, milestone_name):
     g = Github(token)
     for r in repo_list:
         repo = g.get_repo(r)
@@ -42,6 +42,14 @@ def list_issues(token, repo_list, milestone_name):
                 raise Exception("No milestone with name %s" % milestone_name)
         print '===> Processing issues for repo %s' % r
         print_issues(issues.open_issues_in_milestone(repo, m))
+        print '\n'
+
+def list_issues_by_label(token, repo_list, label_names):
+    g = Github(token)
+    for r in repo_list:
+        repo = g.get_repo(r)
+        labels = [repo.get_label(l) for l in label_names.split(",")]
+        print_issues(issues.open_issues_by_label(repo, labels))
         print '\n'
 
 def list_milestones(token, repo_list):
@@ -119,12 +127,18 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--token", help="GitHub access token", required=True)
     command = sys.argv[1]
     if command == "list-issues":
-        parser.add_argument("-m", "--milestone", help="milestone name", required=True)
+        parser.add_argument("-g", "--group", help="group by 'milestone' or 'label'", required=True)
+        parser.add_argument("-f", "--filter", help="milestone or label name", required=True)
         (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
         if len(repo_list) == 0:
             parser.print_usage()
+        elif args.group == "milestone" or args.group == "m":
+            list_issues_by_milestone(args.token, repo_list, args.filter)
+        elif args.group == "label" or args.group == "l":
+            list_issues_by_label(args.token, repo_list, args.filter)
         else:
-            list_issues(args.token, repo_list, args.milestone)
+            print "group must be one of 'milestone' (or 'm') or 'label' (or 'l')"
+            print '\n'
     elif command == "list":
         (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
         if len(repo_list) == 0:
