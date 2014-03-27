@@ -30,6 +30,10 @@ def print_milestones(m, num_uncategorized_issues):
     listed.append([u"Uncategorized", u"Never", u"", num_uncategorized_issues])
     print tabulate(listed, headers=[u"Title", u"Due on", u"Description", u"# Open"], tablefmt="pipe")
 
+def print_label_groups(issue_counts):
+    listed = [[','.join([l.name for l in lg]), count] for (lg, count) in issue_counts]
+    print tabulate(listed, headers=[u"Label Group", u"# Open"], tablefmt="pipe")
+
 def list_issues_by_milestone(token, repo_list, milestone_name):
     g = Github(token)
     for r in repo_list:
@@ -49,7 +53,8 @@ def list_issues_by_label(token, repo_list, label_names):
     for r in repo_list:
         repo = g.get_repo(r)
         labels = [repo.get_label(l) for l in label_names.split(",")]
-        print_issues(issues.open_issues_by_label(repo, labels))
+        found = issues.open_issues_by_label(repo, labels)
+        print_issues(found)
         print '\n'
 
 def list_milestones(token, repo_list):
@@ -61,6 +66,16 @@ def list_milestones(token, repo_list):
         num_uncategorized_issues = len(list(repo.get_issues(milestone='none')))
         print_milestones(milestones, num_uncategorized_issues)
         print '\n'
+
+def list_label_groups(token, repo_list, label_groups_str):
+    g = Github(token)
+    label_group_strs = [lgs.split(",") for lgs in label_groups_str.split(";")]
+    for r in repo_list:
+        repo = g.get_repo(r)
+        label_groups = [[repo.get_label(l) for l in label_group] for label_group in label_group_strs]
+        issue_counts = [(lg, len([i for i in issues.open_issues_by_label(repo, lg)])) for lg in label_groups]
+        print_label_groups(issue_counts)
+
 
 def create_milestone(token, milestone_title, description, due_date, repo_list):
     if due_date:
@@ -145,6 +160,13 @@ if __name__ == '__main__':
             parser.print_usage()
         else:
             list_milestones(args.token, repo_list)
+    elif command == "list-labels":
+        parser.add_argument("-f", "--filter", help="label groups", required=True)
+        (args, repo_list) = parser.parse_known_args(args=sys.argv[2:])
+        if len(repo_list) == 0:
+            parser.print_usage()
+        else:
+            list_label_groups(args.token, repo_list, args.filter)
     elif command == "create":
         parser.add_argument("-m", "--milestone", help="milestone name", required=True)
         parser.add_argument("-D", "--date", help="milestone due date")
