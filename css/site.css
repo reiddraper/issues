@@ -1,7 +1,11 @@
 body {
-    font-family: Helvetica;
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
     padding: 1em;
     color: #333333;
+}
+
+h1, h2, h3 {
+    font-family: Helvetica;
 }
 
 a {
@@ -31,4 +35,7 @@ progress::-webkit-progress-bar {
     height: 0.75em;
     border-radius: 2px;
     width: 8em;
+}
+
+li {
 }
