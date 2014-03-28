@@ -17,8 +17,16 @@ def mkdir_p_idempotent(dir_name):
         else:
             raise
 
+def stylesheets():
+    link(rel='stylesheet', href='/css/normalize.css')
+    link(rel='stylesheet', href='/css/site.css')
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+
+
 def generate_milestone_page(title, data, output_dir):
     _html2 = document(title=title)
+    with _html2.head:
+        stylesheets()
     with _html2:
         h1(title)
         for k in sorted(data.keys()):
@@ -26,7 +34,7 @@ def generate_milestone_page(title, data, output_dir):
                 continue
             with h2() as h:
                 a(k, href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"]))
-            h += " %d/%d" % (data[k]["closed"], data[k]["open"]+data[k]["closed"])
+            h += " %d/%d " % (data[k]["closed"], data[k]["open"]+data[k]["closed"])
             with h:
                 progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
             for i in data[k]["issues"]:
@@ -50,16 +58,16 @@ def generate_milestone_page(title, data, output_dir):
 def generate_milestone_html(json_db, output_dir):
     _html = document(title="Riak Milestones")
     with _html.head:
-        link(rel='stylesheet', href='style.css')
+        stylesheets()
     for k in sorted(json_db.keys()):
         mkdir_p_idempotent(os.path.join(output_dir, k))
         with _html:
             with h1() as h:
-                a(k, href="%s" % urllib.quote(k))
-            openissues = sum([json_db[k][x]["open"] for x in json_db[k].keys()])
-            closedissues = sum([json_db[k][x]["closed"] for x in json_db[k].keys()])
-            h += " %d/%d" % (closedissues, openissues+closedissues)
-            progress(max=openissues+closedissues, value=closedissues)
+                h += a(k, href="%s" % urllib.quote(k))
+                openissues = sum([json_db[k][x]["open"] for x in json_db[k].keys()])
+                closedissues = sum([json_db[k][x]["closed"] for x in json_db[k].keys()])
+                h += " %d/%d " % (closedissues, openissues+closedissues)
+                progress(max=openissues+closedissues, value=closedissues)
         generate_milestone_page(k, json_db[k], output_dir)
 
     with _html:
@@ -70,6 +78,8 @@ def generate_milestone_html(json_db, output_dir):
 
 def generate_user_page(username, userdata, output_dir):
     _html = document(title="User assigned issues")
+    with _html.head:
+        stylesheets()
     for m in sorted(userdata.keys()):
         with _html:
             h1(m)
@@ -105,6 +115,8 @@ def generate_user_html(json_db, output_dir):
                     else:
                         usertotals[u] = 1
     _html = document(title="User assigned issues")
+    with _html.head:
+        stylesheets()
     for user in users.keys():
         with _html:
             li(a(user, href="%s.html" % user), " - %d" % usertotals[user])

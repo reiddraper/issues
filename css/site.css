@@ -1,0 +1,34 @@
+body {
+    font-family: Helvetica;
+    padding: 1em;
+    color: #333333;
+}
+
+a {
+    text-decoration: none;
+}
+
+progress {
+    color: rgb(39, 107, 174);
+    background-color: #f3f3f3;
+    height: 0.75em;
+    border-radius: 2px;
+    width: 8em;
+}
+progress::-moz-progress-bar {
+    color: rgb(39, 107, 174);
+    background-color: #f3f3f3;
+    height: 0.75em;
+    border-radius: 2px;
+    width: 8em;
+}
+progress::-webkit-progress-value {
+    background-color: rgb(39, 107, 174);
+    border-radius: 2px;
+}
+progress::-webkit-progress-bar {
+    background-color: #f3f3f3;
+    height: 0.75em;
+    border-radius: 2px;
+    width: 8em;
+}
