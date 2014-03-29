@@ -37,5 +37,12 @@ progress::-webkit-progress-bar {
     width: 8em;
 }
 
-li {
+li .unassigned {
+    color: rgb(175, 25, 0);
+}
+
+div.issue-type {
+    display: inline;
+    font-family: "Courier New", Courier, monospace;
+    margin-right: 0.25em;
 }

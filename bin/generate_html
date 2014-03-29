@@ -38,14 +38,15 @@ def generate_milestone_page(title, data, output_dir):
             with h:
                 progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
             for i in data[k]["issues"]:
-                with li("%s - " % i["type"]) as l:
+                with li() as l:
+                    div("%s" % i["type"], cls='issue-type')
                     a("#%d - %s" % (i["number"], i["title"]), href=i["url"])
                 l += "  --  "
                 with l:
                     if i["assignee"]:
                         a(i["assignee"], href="../users/%s.html" % i["assignee"])
                     else:
-                        a("unassigned", style="color: red;")
+                        a("unassigned", cls="unassigned")
 
 
     with _html2:
