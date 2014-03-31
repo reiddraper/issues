@@ -20,11 +20,8 @@ progress {
     width: 8em;
 }
 progress::-moz-progress-bar {
-    color: rgb(39, 107, 174);
-    background-color: #f3f3f3;
-    height: 0.75em;
-    border-radius: 2px;
-    width: 8em;
+    /* moz doesn't let us style the background of the bar */
+    background-color: rgb(39, 107, 174);
 }
 progress::-webkit-progress-value {
     background-color: rgb(39, 107, 174);
