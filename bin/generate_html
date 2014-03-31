@@ -22,6 +22,27 @@ def stylesheets():
     link(rel='stylesheet', href='/css/site.css')
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
 
+def sort_by_issue_type_then_assignee(issue):
+    m = {"P": 0, "I": 1}
+    return [m[issue['type']], issue['assignee']]
+
+def split_issues_by_type(issues):
+    pull_requests   = [i for i in issues if i['type'] == 'P']
+    issues          = [i for i in issues if i['type'] == 'I']
+    return (pull_requests, issues)
+
+def generate_issue_list(issues):
+    with ul():
+        for i in sorted(issues, key=lambda x: x['assignee']):
+            with li() as l:
+                div("%s" % i["type"], cls='issue-type')
+                a("#%d - %s" % (i["number"], i["title"]), href=i["url"])
+            l += "  --  "
+            with l:
+                if i["assignee"]:
+                    a(i["assignee"], href="../users/%s.html" % i["assignee"])
+                else:
+                    a("unassigned", cls="unassigned")
 
 def generate_milestone_page(title, data, output_dir):
     _html2 = document(title=title)
@@ -37,17 +58,9 @@ def generate_milestone_page(title, data, output_dir):
             h += " %d/%d " % (data[k]["closed"], data[k]["open"]+data[k]["closed"])
             with h:
                 progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
-            for i in data[k]["issues"]:
-                with li() as l:
-                    div("%s" % i["type"], cls='issue-type')
-                    a("#%d - %s" % (i["number"], i["title"]), href=i["url"])
-                l += "  --  "
-                with l:
-                    if i["assignee"]:
-                        a(i["assignee"], href="../users/%s.html" % i["assignee"])
-                    else:
-                        a("unassigned", cls="unassigned")
-
+            (pull_requests, issues) = split_issues_by_type(data[k]['issues'])
+            generate_issue_list(pull_requests)
+            generate_issue_list(issues)
 
     with _html2:
         p("Last generated at %s" % (datetime.datetime.now()))

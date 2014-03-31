@@ -37,6 +37,10 @@ progress::-webkit-progress-bar {
     width: 8em;
 }
 
+ul {
+    padding-left: 1em;
+}
+
 li .unassigned {
     color: rgb(175, 25, 0);
 }
