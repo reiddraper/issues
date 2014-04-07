@@ -142,10 +142,53 @@ def generate_user_html(json_db, output_dir):
     with codecs.open(os.path.join(output_dir, "users", "index.html"), "w", encoding="utf-8") as f:
         f.write(_html.render())
 
+def generate_label_page(label_group, repodata, output_dir):
+    _html = document(title=label_group)
+    with _html.head:
+        stylesheets()
+    with _html:
+        h1(label_group)
+
+    for repo in sorted(repodata.keys()):
+        with _html:
+            h2(repo)
+            (pull_requests, issues) = split_issues_by_type(repodata[repo]['issues'])
+            generate_issue_list(pull_requests)
+            generate_issue_list(issues)
+
+    with _html:
+        p("Last generated at %s" % (datetime.datetime.now()))
+
+    with codecs.open(os.path.join(output_dir, "labels", "%s.html" % label_group), "w", encoding="utf-8") as f:
+        f.write(_html.render())
+
+def generate_label_html(json_db, output_dir):
+    mkdir_p_idempotent(os.path.join(output_dir, "labels"))
+    _html = document("Riak Label Groups")
+    with _html.head:
+        stylesheets()
+    for label_group in sorted(json_db.keys()):
+        with _html:
+            with h1() as h:
+                a(label_group, href="%s.html" % label_group)
+                open_total = sum([json_db[label_group][x]["open"] for x in json_db[label_group].keys()])
+                closed_total = sum([json_db[label_group][x]["closed"] for x in json_db[label_group].keys()])
+                h += " %d/%d" % (closed_total, open_total+closed_total)
+                progress(max=open_total+closed_total, value=closed_total)
+        generate_label_page(label_group, json_db[label_group], output_dir)
+
+    with _html:
+        p("Last generated at %s" % (datetime.datetime.now()))
+
+    with codecs.open(os.path.join(output_dir, "labels", "index.html"), "w", encoding="utf-8") as f:
+        f.write(_html.render())
+
+
 if __name__ == '__main__':
     import sys
     import json
     (json_input, output_dir) = sys.argv[1:3]
     json_db = json.load(open(json_input, 'r'))
-    generate_milestone_html(json_db, output_dir)
-    generate_user_html(json_db, output_dir)
+    generate_milestone_html(json_db["milestones"], output_dir)
+    generate_user_html(json_db["milestones"], output_dir)
+    generate_label_html(json_db["labels"], output_dir)

@@ -9,3 +9,9 @@ def milestone_by_name(repo, milestone_name):
 
 def open_issues_in_milestone(repo, milestone):
     return repo.get_issues(milestone=milestone, state='open')
+
+def open_issues_by_labels(repo, labels):
+    return repo.get_issues(state='open', labels = labels)
+
+def closed_issues_by_labels(repo, labels):
+    return repo.get_issues(state='closed', labels = labels)
