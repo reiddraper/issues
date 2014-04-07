@@ -149,7 +149,7 @@ def json_label_groups(token, repo_list, label_groups_str):
             repo_map = repos_map.get(r, {})
             repo = g.get_repo(r)
             labels = [repo.get_label(l) for l in lg]
-            open_issues = [{"number": i.number, "title": i.title, "url": i.html_url}
+            open_issues = [{"number": i.number, "title": i.title, "url": i.html_url, "type": get_type(i), "assignee": get_assignee(i)}
                            for i in issues.open_issues_by_labels(repo, labels)]
             open_issues_count = len(open_issues)
             closed_issues_count = len([i for i in issues.closed_issues_by_labels(repo, labels)])

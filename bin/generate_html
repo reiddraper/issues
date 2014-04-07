@@ -144,14 +144,17 @@ def generate_user_html(json_db, output_dir):
 
 def generate_label_page(label_group, repodata, output_dir):
     _html = document(title=label_group)
+    with _html.head:
+        stylesheets()
     with _html:
         h1(label_group)
 
     for repo in sorted(repodata.keys()):
         with _html:
             h2(repo)
-            for i in repodata[repo]["issues"]:
-                li(a("#%d - %s" % (i["number"], i["title"]), href=i["url"]))
+            (pull_requests, issues) = split_issues_by_type(repodata[repo]['issues'])
+            generate_issue_list(pull_requests)
+            generate_issue_list(issues)
 
     with _html:
         p("Last generated at %s" % (datetime.datetime.now()))
@@ -163,15 +166,15 @@ def generate_label_html(json_db, output_dir):
     mkdir_p_idempotent(os.path.join(output_dir, "labels"))
     _html = document("Riak Label Groups")
     with _html.head:
-        link(rel='stylesheet', href='style.css')
+        stylesheets()
     for label_group in sorted(json_db.keys()):
         with _html:
             with h1() as h:
                 a(label_group, href="%s.html" % label_group)
-            open_total = sum([json_db[label_group][x]["open"] for x in json_db[label_group].keys()])
-            closed_total = sum([json_db[label_group][x]["closed"] for x in json_db[label_group].keys()])
-            h += " %d/%d" % (closed_total, open_total+closed_total)
-            progress(max=open_total+closed_total, value=closed_total)
+                open_total = sum([json_db[label_group][x]["open"] for x in json_db[label_group].keys()])
+                closed_total = sum([json_db[label_group][x]["closed"] for x in json_db[label_group].keys()])
+                h += " %d/%d" % (closed_total, open_total+closed_total)
+                progress(max=open_total+closed_total, value=closed_total)
         generate_label_page(label_group, json_db[label_group], output_dir)
 
     with _html:
