@@ -35,10 +35,6 @@ def page(title):
         navbar()
     return _html
 
-def sort_by_issue_type_then_assignee(issue):
-    m = {"P": 0, "I": 1}
-    return [m[issue['type']], issue['assignee']]
-
 def split_issues_by_type(issues):
     pull_requests   = [i for i in issues if i['type'] == 'P']
     issues          = [i for i in issues if i['type'] == 'I']
