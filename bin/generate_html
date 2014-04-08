@@ -170,7 +170,7 @@ def generate_label_html(json_db, output_dir):
     for label_group in sorted(json_db.keys()):
         with _html:
             with h1() as h:
-                a(label_group, href="%s.html" % label_group)
+                h+= a(label_group, href="%s.html" % label_group)
                 open_total = sum([json_db[label_group][x]["open"] for x in json_db[label_group].keys()])
                 closed_total = sum([json_db[label_group][x]["closed"] for x in json_db[label_group].keys()])
                 h += " %d/%d" % (closed_total, open_total+closed_total)
