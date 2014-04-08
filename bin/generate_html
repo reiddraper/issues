@@ -24,6 +24,9 @@ def navbar():
             li(a('labels', href='/riak/labels', cls='nav-element'))
             li(a('users', href='/riak/users', cls='nav-element'))
 
+def page_footer():
+    footer("Last generated at %s" % (datetime.datetime.now()))
+
 
 def page(title):
     _html = document(title=title)
@@ -71,7 +74,7 @@ def generate_milestone_page(title, data, output_dir):
             generate_issue_list(issues)
 
     with _html2:
-        p("Last generated at %s" % (datetime.datetime.now()))
+        page_footer()
 
     with codecs.open(os.path.join(output_dir, title, "index.html"), "w", encoding="utf-8") as f:
         f.write(_html2.render())
@@ -91,7 +94,7 @@ def generate_milestone_html(json_db, output_dir):
         generate_milestone_page(k, json_db[k], output_dir)
 
     with _html:
-        p("Last generated at %s" % (datetime.datetime.now()))
+        page_footer()
 
     with codecs.open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(_html.render())
@@ -108,7 +111,7 @@ def generate_user_page(username, userdata, output_dir):
                 generate_issue_list(issues, include_assignee=False)
 
     with _html:
-        p("Last generated at %s" % (datetime.datetime.now()))
+        page_footer()
 
     with codecs.open(os.path.join(output_dir, "users", "%s.html" % username), "w", encoding="utf-8") as f:
         f.write(_html.render())
@@ -140,7 +143,7 @@ def generate_user_html(json_db, output_dir):
         generate_user_page(user, users[user], output_dir)
 
     with _html:
-        p("Last generated at %s" % (datetime.datetime.now()))
+        page_footer()
 
     with codecs.open(os.path.join(output_dir, "users", "index.html"), "w", encoding="utf-8") as f:
         f.write(_html.render())
@@ -158,7 +161,7 @@ def generate_label_page(label_group, repodata, output_dir):
             generate_issue_list(issues)
 
     with _html:
-        p("Last generated at %s" % (datetime.datetime.now()))
+        page_footer()
 
     with codecs.open(os.path.join(output_dir, "labels", "%s.html" % label_group), "w", encoding="utf-8") as f:
         f.write(_html.render())
@@ -177,7 +180,7 @@ def generate_label_html(json_db, output_dir):
         generate_label_page(label_group, json_db[label_group], output_dir)
 
     with _html:
-        p("Last generated at %s" % (datetime.datetime.now()))
+        page_footer()
 
     with codecs.open(os.path.join(output_dir, "labels", "index.html"), "w", encoding="utf-8") as f:
         f.write(_html.render())
