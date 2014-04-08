@@ -17,10 +17,23 @@ def mkdir_p_idempotent(dir_name):
         else:
             raise
 
-def stylesheets():
-    link(rel='stylesheet', href='/css/normalize.css')
-    link(rel='stylesheet', href='/css/site.css')
-    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+def navbar():
+    with nav():
+        with ul():
+            li(a('milestones', href='/riak', cls='nav-element'))
+            li(a('labels', href='/riak/labels', cls='nav-element'))
+            li(a('users', href='/riak/users', cls='nav-element'))
+
+
+def page(title):
+    _html = document(title=title)
+    with _html.head:
+        link(rel='stylesheet', href='/css/normalize.css')
+        link(rel='stylesheet', href='/css/site.css')
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    with _html.body:
+        navbar()
+    return _html
 
 def sort_by_issue_type_then_assignee(issue):
     m = {"P": 0, "I": 1}
@@ -45,9 +58,7 @@ def generate_issue_list(issues):
                     a("unassigned", cls="unassigned")
 
 def generate_milestone_page(title, data, output_dir):
-    _html2 = document(title=title)
-    with _html2.head:
-        stylesheets()
+    _html2 = page(title=title)
     with _html2:
         h1(title)
         for k in sorted(data.keys()):
@@ -70,9 +81,7 @@ def generate_milestone_page(title, data, output_dir):
 
 
 def generate_milestone_html(json_db, output_dir):
-    _html = document(title="Riak Milestones")
-    with _html.head:
-        stylesheets()
+    _html = page(title="Riak Milestones")
     for k in sorted(json_db.keys()):
         mkdir_p_idempotent(os.path.join(output_dir, k))
         with _html:
@@ -91,9 +100,7 @@ def generate_milestone_html(json_db, output_dir):
         f.write(_html.render())
 
 def generate_user_page(username, userdata, output_dir):
-    _html = document(title="User assigned issues")
-    with _html.head:
-        stylesheets()
+    _html = page(title="User assigned issues")
     for m in sorted(userdata.keys()):
         with _html:
             h1(m)
@@ -128,13 +135,11 @@ def generate_user_html(json_db, output_dir):
                         usertotals[u] += 1
                     else:
                         usertotals[u] = 1
-    _html = document(title="User assigned issues")
-    with _html.head:
-        stylesheets()
-    for user in users.keys():
-        with _html:
-            li(a(user, href="%s.html" % user), " - %d" % usertotals[user])
-        generate_user_page(user, users[user], output_dir)
+    _html = page(title="User assigned issues")
+    with _html:
+        for user in users.keys():
+            h1(a(user, href="%s.html" % user), " - %d" % usertotals[user])
+    generate_user_page(user, users[user], output_dir)
 
     with _html:
         p("Last generated at %s" % (datetime.datetime.now()))
@@ -143,9 +148,7 @@ def generate_user_html(json_db, output_dir):
         f.write(_html.render())
 
 def generate_label_page(label_group, repodata, output_dir):
-    _html = document(title=label_group)
-    with _html.head:
-        stylesheets()
+    _html = page(title=label_group)
     with _html:
         h1(label_group)
 
@@ -164,9 +167,7 @@ def generate_label_page(label_group, repodata, output_dir):
 
 def generate_label_html(json_db, output_dir):
     mkdir_p_idempotent(os.path.join(output_dir, "labels"))
-    _html = document("Riak Label Groups")
-    with _html.head:
-        stylesheets()
+    _html = page("Riak Label Groups")
     for label_group in sorted(json_db.keys()):
         with _html:
             with h1() as h:
