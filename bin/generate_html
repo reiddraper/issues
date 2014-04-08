@@ -40,18 +40,19 @@ def split_issues_by_type(issues):
     issues          = [i for i in issues if i['type'] == 'I']
     return (pull_requests, issues)
 
-def generate_issue_list(issues):
+def generate_issue_list(issues, include_assignee=True):
     with ul():
         for i in sorted(issues, key=lambda x: x['assignee']):
             with li() as l:
                 div("%s" % i["type"], cls='issue-type')
                 a("#%d - %s" % (i["number"], i["title"]), href=i["url"])
-            l += "  --  "
             with l:
-                if i["assignee"]:
-                    a(i["assignee"], href="../users/%s.html" % i["assignee"])
-                else:
-                    a("unassigned", cls="unassigned")
+                if include_assignee:
+                    l += "  --  "
+                    if i["assignee"]:
+                        a(i["assignee"], href="../users/%s.html" % i["assignee"])
+                    else:
+                        a("unassigned", cls="unassigned")
 
 def generate_milestone_page(title, data, output_dir):
     _html2 = page(title=title)
@@ -96,14 +97,15 @@ def generate_milestone_html(json_db, output_dir):
         f.write(_html.render())
 
 def generate_user_page(username, userdata, output_dir):
-    _html = page(title="User assigned issues")
+    _html = page(title="%s - assigned issues" % username)
     for m in sorted(userdata.keys()):
         with _html:
             h1(m)
-            for r in sorted(userdata[m].keys()):
-                h2(r)
-                for i in userdata[m][r]:
-                    li(a("#%d - %s" % (i["number"], i["title"]), href=i["url"]))
+            for repo in sorted(userdata[m].keys()):
+                h2(repo)
+                (pull_requests, issues) = split_issues_by_type(userdata[m][repo])
+                generate_issue_list(pull_requests, include_assignee=False)
+                generate_issue_list(issues, include_assignee=False)
 
     with _html:
         p("Last generated at %s" % (datetime.datetime.now()))
