@@ -137,7 +137,7 @@ def generate_user_html(json_db, output_dir):
                     else:
                         usertotals[u] = 1
     _html = page(title="User assigned issues")
-    for user in users.keys():
+    for user in reversed(sorted(users.keys(), key=lambda x: usertotals[x])):
         with _html:
             h1(a(user, href="%s.html" % user), " - %d" % usertotals[user])
         generate_user_page(user, users[user], output_dir)
