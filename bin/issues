@@ -284,9 +284,12 @@ def json_parser(args):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
-        description="Cross-repo Issues / Milestone tool for GitHub")
+        usage='%(prog)s [-h] <-t TOKEN> <-r REPO>... <subcommand> [subcommand-options | -h]',
+        description="Cross-repo Issues / Milestone tool for GitHub",
+    )
     parser.add_argument("-r", "--repo", action='append',
-                        help="Repo to operate on, use multiple -r for list")
+                        help="Repo to operate on, use multiple -r for list",
+                        required=True)
     parser.add_argument("-t", "--token", help="GitHub access token",
                         required=True)
 
@@ -357,13 +360,8 @@ if __name__ == '__main__':
                              required=False)
     parser_json.set_defaults(func=json_parser)
 
-
     # Parse the args
     args = parser.parse_args()
-
-    # Ensure we have at least one repo
-    if len(args.repo) == 0:
-        parser.print_usage()
 
     # Call subcommand function
     args.func(args)
