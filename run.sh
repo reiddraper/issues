@@ -7,5 +7,5 @@ GHTOKEN=
 WWWPATH=
 
 source ./env/bin/activate
-./bin/issues -t $TOKEN -r helium/router -r helium/engineering -r helium/snapboard -r helium/embedded json -o out.json
+./bin/issues -t $GHTOKEN -r helium/router -r helium/engineering -r helium/snapboard -r helium/embedded json -o out.json
 ./bin/generate_html out.json $WWWPATH
