@@ -2,3 +2,4 @@ PyGithub==1.24.0
 tabulate==0.7.2
 python-dateutil==1.5
 dominate==2.1.9
+Chroma==0.2.0

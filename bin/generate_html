@@ -7,6 +7,7 @@ import os
 import errno
 import datetime
 import codecs
+import chroma
 
 def mkdir_p_idempotent(dir_name):
     try:
@@ -17,25 +18,25 @@ def mkdir_p_idempotent(dir_name):
         else:
             raise
 
-def navbar():
+def navbar(prefix):
     with nav():
         with ul():
-            li(a('milestones', href='/riak', cls='nav-element'))
-            li(a('labels', href='/riak/labels', cls='nav-element'))
-            li(a('users', href='/riak/users', cls='nav-element'))
+            li(a('milestones', href=prefix, cls='nav-element'))
+            li(a('labels', href=prefix+'labels', cls='nav-element'))
+            li(a('users', href=prefix+'users', cls='nav-element'))
 
 def page_footer():
     footer("Last generated at %s" % (datetime.datetime.now()))
 
 
-def page(title):
+def page(title, prefix=""):
     _html = document(title=title)
     with _html.head:
-        link(rel='stylesheet', href='/css/normalize.css')
-        link(rel='stylesheet', href='/css/site.css')
+        link(rel='stylesheet', href=prefix+'css/normalize.css')
+        link(rel='stylesheet', href=prefix+'css/site.css')
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
     with _html.body:
-        navbar()
+        navbar(prefix)
     return _html
 
 def split_issues_by_type(issues):
@@ -48,7 +49,16 @@ def generate_issue_list(issues, include_assignee=True):
         for i in sorted(issues, key=lambda x: x['assignee']):
             with li() as l:
                 div("%s" % i["type"], cls='issue-type')
-                a("#%d - %s" % (i["number"], i["title"]), href=i["url"])
+                a("#%d - %s" % (i["number"], i["title"]), target="_blank", href=i["url"])
+                if "labels" in i:
+                    for lab in i["labels"]:
+                        color = chroma.Color(lab["color"])
+                        h, light, s = color.hls
+                        if light < 0.5:
+                            color = "color:white; background-color: #%s;" % lab['color']
+                        else:
+                            color = "background-color: #%s;" % lab['color']
+                        span(lab["name"], cls='label-badge', style=color)
             with l:
                 if include_assignee:
                     l += "  --  "
@@ -57,15 +67,18 @@ def generate_issue_list(issues, include_assignee=True):
                     else:
                         a("unassigned", cls="unassigned")
 
-def generate_milestone_page(title, data, output_dir):
-    _html2 = page(title=title)
+def generate_milestone_page(title, data0, output_dir):
+    data = data0["repos"]
+    _html2 = page(title=title, prefix="../")
     with _html2:
-        h1(title)
+        with h1(title) as h:
+            if data0.get("due", False):
+                h += " due %s" % data0["due"]
         for k in sorted(data.keys()):
             if data[k]["open"]+data[k]["closed"] == 0:
                 continue
             with h2() as h:
-                a(k, href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"]))
+                a(k, target="_blank", href="https://github.com/%s/issues?milestone=%d&state=open" % (k, data[k]["number"]))
             h += " %d/%d " % (data[k]["closed"], data[k]["open"]+data[k]["closed"])
             with h:
                 progress(max=data[k]["open"]+data[k]["closed"], value=data[k]["closed"])
@@ -81,14 +94,17 @@ def generate_milestone_page(title, data, output_dir):
 
 
 def generate_milestone_html(json_db, output_dir):
-    _html = page(title="Riak Milestones")
+    _html = page(title="Milestones")
     for k in sorted(json_db.keys()):
         mkdir_p_idempotent(os.path.join(output_dir, k))
         with _html:
             with h1() as h:
                 h += a(k, href="%s" % urllib.quote(k))
-                openissues = sum([json_db[k][x]["open"] for x in json_db[k].keys()])
-                closedissues = sum([json_db[k][x]["closed"] for x in json_db[k].keys()])
+                if json_db[k].get("due", False):
+                    h += " (due %s)" % json_db[k]["due"]
+
+                openissues = sum([json_db[k]["repos"][x]["open"] for x in json_db[k]["repos"].keys()])
+                closedissues = sum([json_db[k]["repos"][x]["closed"] for x in json_db[k]["repos"].keys()])
                 h += " %d/%d " % (closedissues, openissues+closedissues)
                 progress(max=openissues+closedissues, value=closedissues)
         generate_milestone_page(k, json_db[k], output_dir)
@@ -100,7 +116,7 @@ def generate_milestone_html(json_db, output_dir):
         f.write(_html.render())
 
 def generate_user_page(username, userdata, output_dir):
-    _html = page(title="%s - assigned issues" % username)
+    _html = page(title="%s - assigned issues" % username, prefix="../")
     for m in sorted(userdata.keys()):
         with _html:
             h1(m)
@@ -121,8 +137,8 @@ def generate_user_html(json_db, output_dir):
     users = {}
     usertotals = {}
     for m in json_db.keys():
-        for r in json_db[m].keys():
-            for issue in json_db[m][r]["issues"]:
+        for r in json_db[m]["repos"].keys():
+            for issue in json_db[m]["repos"][r]["issues"]:
                 if issue["assignee"]:
                     u = issue["assignee"]
                     userdata = users.get(u, {})
@@ -136,7 +152,7 @@ def generate_user_html(json_db, output_dir):
                         usertotals[u] += 1
                     else:
                         usertotals[u] = 1
-    _html = page(title="User assigned issues")
+    _html = page(title="User assigned issues", prefix="../")
     for user in reversed(sorted(users.keys(), key=lambda x: usertotals[x])):
         with _html:
             h1(a(user, href="%s.html" % user), " - %d" % usertotals[user])
@@ -149,7 +165,7 @@ def generate_user_html(json_db, output_dir):
         f.write(_html.render())
 
 def generate_label_page(label_group, repodata, output_dir):
-    _html = page(title=label_group)
+    _html = page(title=label_group, prefix="../")
     with _html:
         h1(label_group)
 
@@ -168,7 +184,7 @@ def generate_label_page(label_group, repodata, output_dir):
 
 def generate_label_html(json_db, output_dir):
     mkdir_p_idempotent(os.path.join(output_dir, "labels"))
-    _html = page("Riak Label Groups")
+    _html = page("Label Groups", prefix="../")
     for label_group in sorted(json_db.keys()):
         with _html:
             with h1() as h:
